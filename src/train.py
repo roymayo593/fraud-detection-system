@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
+from sklearn.preprocessing import LabelEncoder
 import joblib
 
 
@@ -15,30 +16,49 @@ def load_data(path):
     return data
 
 
+def preprocess_data(data):
+    """
+    Basic preprocessing:
+    - Drop unnecessary columns
+    - Encode categorical variables
+    """
+    # Drop ID-like columns if present
+    drop_cols = ["trans_date_trans_time", "merchant", "first", "last",
+                 "street", "city", "state", "zip", "job", "dob"]
+    
+    for col in drop_cols:
+        if col in data.columns:
+            data = data.drop(col, axis=1)
+
+    # Encode categorical columns
+    label_encoders = {}
+    for column in data.select_dtypes(include=["object"]).columns:
+        le = LabelEncoder()
+        data[column] = le.fit_transform(data[column])
+        label_encoders[column] = le
+
+    return data
+
+
 def train_model(data):
     """
-    Train Random Forest model for fraud detection
+    Train Random Forest model
     """
-    # Separate features and target
-    X = data.drop("Class", axis=1)
-    y = data["Class"]
+    X = data.drop("is_fraud", axis=1)
+    y = data["is_fraud"]
 
-    # Split into training and test sets
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
 
-    # Create model
     model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
         n_jobs=-1
     )
 
-    # Train model
     model.fit(X_train, y_train)
 
-    # Evaluate model
     predictions = model.predict(X_test)
 
     print("Model Performance:")
@@ -48,21 +68,22 @@ def train_model(data):
 
 
 def save_model(model, path="model.pkl"):
-    """
-    Save trained model to file
-    """
     joblib.dump(model, path)
     print(f"Model saved to {path}")
 
 
 if __name__ == "__main__":
-    print("Starting fraud detection training...")
+    print("Loading dataset...")
+    data = load_data("data/fraudTrain.csv")
 
-    # NOTE: dataset will be added later
-    data = load_data("data/creditcard.csv")
+    print("Preprocessing data...")
+    data = preprocess_data(data)
 
+    print("Training model...")
     model = train_model(data)
 
+    print("Saving model...")
     save_model(model)
 
     print("Training complete.")
+
