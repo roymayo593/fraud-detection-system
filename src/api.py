@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import joblib
+import os
 import pandas as pd
 from pydantic import BaseModel
 
@@ -7,7 +8,11 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Load trained model
-model = joblib.load("../model.pkl")
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
+
+model = joblib.load(MODEL_PATH)
 
 
 # Define full input structure
